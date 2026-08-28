@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weather</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; color: #222; }
+    h1 { font-size: 1.5rem; }
+    .row { display: flex; gap: 8px; margin-bottom: 8px; }
+    input { flex: 1; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; }
+    button { padding: 10px 16px; font-size: 1rem; border: 0; border-radius: 6px; background: #2563eb; color: #fff; cursor: pointer; }
+    button.secondary { background: #64748b; }
+    button:disabled { opacity: .5; cursor: default; }
+    .card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin-top: 16px; }
+    .temp { font-size: 2.5rem; font-weight: 600; }
+    .muted { color: #64748b; }
+    .day { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+    .day:last-child { border-bottom: 0; }
+    .error { color: #dc2626; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <h1>🌤️ Weather</h1>
+  <div class="row">
+    <input id="location" placeholder="Enter a city, e.g. London" value="London">
+    <button id="now" onclick="getWeather()">Current</button>
+    <button id="fc" class="secondary" onclick="getForecast()">7-day</button>
+  </div>
+  <div id="output"></div>
+
+  <script>
+    const out = document.getElementById('output');
+
+    async function call(url) {
+      out.innerHTML = '<p class="muted">Loading…</p>';
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Request failed');
+      return data;
+    }
+
+    function place(loc) {
+      return [loc.name, loc.admin1, loc.country].filter(Boolean).join(', ');
+    }
+
+    async function getWeather() {
+      const loc = document.getElementById('location').value.trim();
+      if (!loc) return;
+      try {
+        const d = await call(`/weather?location=${encodeURIComponent(loc)}`);
+        const c = d.current;
+        out.innerHTML = `
+          <div class="card">
+            <div class="muted">${place(d.location)}</div>
+            <div class="temp">${c.temperature_c}°C</div>
+            <div>${c.description}</div>
+            <div class="muted">Feels like ${c.apparent_temperature_c}°C ·
+              Humidity ${c.relative_humidity_pct}% · Wind ${c.wind_speed_kmh} km/h</div>
+          </div>`;
+      } catch (e) { out.innerHTML = `<p class="error">${e.message}</p>`; }
+    }
+
+    async function getForecast() {
+      const loc = document.getElementById('location').value.trim();
+      if (!loc) return;
+      try {
+        const d = await call(`/forecast?location=${encodeURIComponent(loc)}&days=7`);
+        const rows = d.daily.map(day => `
+          <div class="day">
+            <span>${day.date}</span>
+            <span>${day.description}</span>
+            <span><strong>${day.temperature_max_c}°</strong>
+              <span class="muted">/ ${day.temperature_min_c}°</span></span>
+          </div>`).join('');
+        out.innerHTML = `
+          <div class="card">
+            <div class="muted">${place(d.location)} — ${d.forecast_days}-day forecast</div>
+            ${rows}
+          </div>`;
+      } catch (e) { out.innerHTML = `<p class="error">${e.message}</p>`; }
+    }
+  </script>
+</body>
+</html>

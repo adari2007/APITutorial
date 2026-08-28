@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# IDE
+.idea/
+
+# OS
+.DS_Store
+
+# IDE module files
+*.iml
+
+# Not part of this project — contains secrets, do not commit
+test.txt
