@@ -42,15 +42,19 @@ class LoginRequest(BaseModel):
     password: str = Field(..., examples=["s3cret!"])
 
 
-def current_user(authorization: str | None = Header(default=None)) -> dict:
-    """Dependency: resolve the `Authorization: Bearer <token>` header to a user.
+def bearer_token(authorization: str | None = Header(default=None)) -> str | None:
+    """Dependency: pull the raw token out of an `Authorization: Bearer <token>` header."""
+    if authorization and authorization.lower().startswith("bearer "):
+        return authorization[len("bearer ") :].strip()
+    return None
+
+
+def current_user(token: str | None = Depends(bearer_token)) -> dict:
+    """Dependency: resolve the Bearer token to a user.
 
     Demonstrates protecting an endpoint with a Bearer token. Raises 401 if the
     header is missing or the token is invalid.
     """
-    token = None
-    if authorization and authorization.lower().startswith("bearer "):
-        token = authorization[len("bearer ") :].strip()
     try:
         return users.user_for_token(token)
     except users.UserError as exc:
@@ -134,3 +138,13 @@ async def login(body: LoginRequest) -> dict:
 async def me(user: dict = Depends(current_user)) -> dict:
     """Return the current user — protected by the Bearer token from /login."""
     return user
+
+
+@app.post("/logout")
+async def logout(token: str | None = Depends(bearer_token)) -> dict:
+    """Invalidate the caller's Bearer token. It can't be used again after this."""
+    try:
+        users.revoke_token(token)
+    except users.UserError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message)
+    return {"detail": "Logged out"}

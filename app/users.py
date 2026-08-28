@@ -81,6 +81,12 @@ def user_for_token(token: str | None) -> dict:
     return public_view(_users[username])
 
 
+def revoke_token(token: str | None) -> None:
+    """Invalidate an access token (logout). Raises UserError(401) if unknown."""
+    if token is None or _tokens.pop(token, None) is None:
+        raise UserError("Missing or invalid access token", status_code=401)
+
+
 def public_view(user: dict) -> dict:
     """Strip secrets (salt, hash) before returning a user to a client."""
     return {

@@ -63,6 +63,7 @@ live in `app/main.py`.
 | POST   | `/users`    | **Register** a new user                            |
 | POST   | `/login`    | **Log in**, receive a Bearer access token          |
 | GET    | `/me`       | Current user — **protected** by the Bearer token   |
+| POST   | `/logout`   | **Invalidate** the caller's Bearer token           |
 | GET    | `/health`   | Liveness check                                     |
 | GET    | `/docs`     | Interactive Swagger UI (auto-generated)            |
 
@@ -234,6 +235,21 @@ curl "http://127.0.0.1:8000/me" \
 // 200 OK — or 401 if the token is missing/invalid
 { "username": "ana", "email": "ana@example.com", "created_at": "2026-08-28T19:22:07Z" }
 ```
+
+**`POST /logout` — invalidate the token**
+
+Revokes the Bearer token so it can no longer be used. Any later request with the
+same token returns `401`.
+
+```bash
+curl -X POST "http://127.0.0.1:8000/logout" \
+  -H "Authorization: Bearer XQedaFjNOeTX..."
+```
+```json
+// 200 OK
+{ "detail": "Logged out" }
+```
+Returns `401` if the token is already missing or invalid.
 
 ---
 
