@@ -4,6 +4,10 @@ A small Python (FastAPI) service that, given a **location name**, queries an
 external weather provider ([Open-Meteo](https://open-meteo.com/) — free, no API
 key required) and returns the weather through your own clean, normalized API.
 
+It also ships a simple **web UI** (at `/`) and a set of **demo user endpoints**
+(signup / login / logout with Bearer-token auth) to illustrate the write side of
+REST — see the [endpoints](#endpoints) below.
+
 ```
 client ──► your API (/weather, /forecast) ──► FastAPI app
                                                   │
@@ -32,8 +36,13 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-The server starts at `http://127.0.0.1:8000`. Interactive Swagger docs are
-auto-generated at `http://127.0.0.1:8000/docs`.
+The server starts at `http://127.0.0.1:8000`. Open it in a browser:
+
+- **`/`** — the simple web UI (type a city, get current weather or a 7-day forecast)
+- **`/docs`** — interactive Swagger UI, auto-generated
+
+> **Note:** if port `8000` is already in use, run on another port, e.g.
+> `uvicorn app.main:app --reload --port 8077`, and adjust the URLs accordingly.
 
 ## How it works (overview)
 
@@ -270,7 +279,7 @@ All errors return JSON in the form `{ "detail": "..." }`:
 
 | Status | When                                                        |
 |--------|-------------------------------------------------------------|
-| `401`  | Missing/invalid credentials or Bearer token (`/login`, `/me`). |
+| `401`  | Missing/invalid credentials or Bearer token (`/login`, `/me`, `/logout`). |
 | `404`  | The location name could not be geocoded (no match found).   |
 | `409`  | Username already exists (`/users`).                         |
 | `422`  | Invalid parameters (e.g. missing `location`, `days` out of range, short password). |
@@ -296,8 +305,13 @@ service maps to readable descriptions.
 ```
 app/
   __init__.py
-  main.py            # FastAPI app + route handlers (/weather, /forecast, /health)
+  main.py            # FastAPI app + all route handlers
   weather_client.py  # calls the external Open-Meteo APIs and normalizes responses
+  users.py           # in-memory user store + token auth (demo)
+  static/
+    index.html       # simple web UI served at /
+docs/
+  REST_API_GUIDE.md  # getting-started guide to REST APIs
 requirements.txt
 README.md
 ```
